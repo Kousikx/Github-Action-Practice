@@ -21,7 +21,7 @@ jobs:
       - name: Print Runner OS
         run: echo "Runner OS:$RUNNER_OS"
 #second Job 
-  details:
+    details:
         - name: Version
         run: docker --verion && python --version
 
