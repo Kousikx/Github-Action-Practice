@@ -21,7 +21,9 @@ jobs:
       - name: Print Runner OS
         run: echo "Runner OS:$RUNNER_OS"
 #second Job 
-    details:
-        - name: Version
+  details:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Version
         run: docker --verion && python --version
 
