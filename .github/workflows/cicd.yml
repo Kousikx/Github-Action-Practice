@@ -21,8 +21,7 @@ jobs:
     steps:
       - name: test container
         run: echo "testing done"
-
- deploy:
+  deploy:
    runs-on: ubuntu-latest
    steps:
       - name: deploy
