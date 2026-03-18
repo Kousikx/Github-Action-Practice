@@ -1,0 +1,101 @@
+name: Update README 
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    # 2:30 PM – 3:00 PM IST (09:00–09:30 UTC)
+    - cron: "30-59 9 * * *"
+  workflow_dispatch:   # ✅ Manual trigger for testing
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+
+    env:
+      TZ: Asia/Kolkata
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 🔒 GATEKEEPER STEP (single source of truth)
+      - name: Decide whether to proceed
+        run: |
+          # Default: do NOT proceed
+          echo "PROCEED=false" >> $GITHUB_ENV
+
+          # ✅ Manual run → always allow (testing)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual trigger detected. Proceeding."
+            echo "PROCEED=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          TODAY=$(date +"%Y-%m-%d")
+          DAY=$(date +%u)
+
+          echo "IST Date: $TODAY"
+          echo "IST Day: $DAY"
+
+          # Weekend check
+          if [ "$DAY" -eq 6 ] || [ "$DAY" -eq 7 ]; then
+            echo "Weekend detected. Stopping workflow."
+            exit 0
+          fi
+
+          # Indian public holidays
+          HOLIDAYS=(
+            "2026-01-26"
+            "2026-01-28"
+            "2026-02-03"
+            "2026-02-17"
+            "2026-02-24"
+            "2026-03-06"
+            "2026-03-11"
+            "2026-03-23"
+            "2026-03-31"
+            "2026-04-14"
+            "2026-04-15"
+            "2026-05-01"
+            "2026-08-15"
+            "2026-10-02"
+            "2026-10-20"
+            "2026-12-25"
+          )
+
+          for holiday in "${HOLIDAYS[@]}"; do
+            if [ "$TODAY" = "$holiday" ]; then
+              echo "Indian public holiday detected. Stopping workflow."
+              exit 0
+            fi
+          done
+
+          # ✅ All checks passed
+          echo "PROCEED=true" >> $GITHUB_ENV
+          echo "Weekday & not a holiday. Proceeding."
+
+      # ⏱ Random delay (scheduled runs only)
+      - name: Random delay
+        if: env.PROCEED == 'true' && github.event_name == 'schedule'
+        run: |
+          sleep $((RANDOM % 1800))
+
+      # ✏️ Update README
+      - name: Update README
+        if: env.PROCEED == 'true'
+        run: |
+          TODAY_HUMAN=$(date +"%d %b %Y")
+          sed -i "62s/.*/No updates so far as of $TODAY_HUMAN/" README.md
+
+      # 💾 Commit & push
+      - name: Commit and push changes
+        if: env.PROCEED == 'true'
+        run: |
+          git config user.name "Kousikx"
+          git config user.email "kousikx300@gmail.com"
+
+          git add README.md
+          git commit -m "chore: daily README update"
+          git push
